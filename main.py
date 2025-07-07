@@ -7,7 +7,7 @@ from components.ui_utils import set_custom_theme, modern_card
 from components.flight_tab import flight_tab
 from components.hotel_tab import hotel_tab
 from components.shopping_tab import shopping_tab
-from components.recipe_tab import recipe_tab
+from components.recipe_tab import restaurant_tab
 from components.chat_tab import chat_tab
 
 from config import THEME  # Removed unused import
@@ -49,13 +49,13 @@ def main():
     elif selected_tab == "flights":
         flight_tab(voice_input)
     elif selected_tab == "hotels":
-        hotel_tab(voice_input)
+        hotel_tab()
     elif selected_tab == "shopping":
         shopping_tab(voice_input)
     elif selected_tab == "recommendations":
         recommendations_tab()  # Pass voice_input if recommendations_tab expects it, or remove parentheses if it's a module
     elif selected_tab == "restaurants":
-        recipe_tab(voice_input)
+        restaurant_tab(voice_input)
     elif selected_tab == "chat":
         chat_tab(voice_input)
     

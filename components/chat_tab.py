@@ -1,11 +1,31 @@
-# Chat interface
 import streamlit as st
-import json
-from groq import Groq
 from datetime import datetime
-from components.ui_utils import modern_card
-from components.voice_ui import speak
-from config import GROQ_API_KEY, THEME
+from neo4j import GraphDatabase
+from groq import Groq
+from config import GROQ_API_KEY, NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD
+
+def store_conversation(user_id, message, response):
+    driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USERNAME, NEO4J_PASSWORD))
+    try:
+        with driver.session() as session:
+            session.run("""
+            MERGE (u:User {id: $user_id})
+            CREATE (m:Message {
+                text: $message,
+                timestamp: datetime()
+            })
+            CREATE (r:Response {
+                text: $response,
+                timestamp: datetime()
+            })
+            CREATE (u)-[:SENT]->(m)
+            CREATE (m)-[:GENERATED]->(r)
+            """, 
+            user_id=user_id, message=message, response=response)
+    except Exception as e:
+        st.error(f"Failed to save conversation: {str(e)}")
+    finally:
+        driver.close()
 
 def chat_tab(voice_input=None):
     st.header("💬 Travel Chat Assistant")
@@ -13,35 +33,30 @@ def chat_tab(voice_input=None):
     if "conversation" not in st.session_state:
         st.session_state.conversation = []
     
-    # Voice input handling
+    # Process voice input
     if voice_input:
-        process_user_input(voice_input)
+        process_message(voice_input)
     
     # Text input
-    user_input = st.text_input("Ask me anything about travel...", key="chat_input")
-    if st.button("Send", key="send_chat"):
+    user_input = st.text_input("Ask about travel...", key="chat_input")
+    if st.button("Send"):
         if user_input.strip():
-            process_user_input(user_input)
+            process_message(user_input)
     
     # Display conversation
     for msg in st.session_state.conversation:
         if msg['role'] == 'user':
-            modern_card("You", msg['content'], "👤")
+            st.markdown(f"**You:** {msg['content']}")
         else:
-            modern_card("Travel Assistant", msg['content'], "🤖")
-    
-    # Clear conversation button
-    if st.button("Clear Conversation", key="clear_chat"):
-        st.session_state.conversation = []
-        st.experimental_rerun()
+            st.markdown(f"**Assistant:** {msg['content']}")
 
-def process_user_input(user_input):
+def process_message(message):
     client = Groq(api_key=GROQ_API_KEY)
     
-    # Add user message to conversation
+    # Add to conversation
     st.session_state.conversation.append({
         'role': 'user',
-        'content': user_input,
+        'content': message,
         'timestamp': datetime.now().isoformat()
     })
     
@@ -49,33 +64,26 @@ def process_user_input(user_input):
     with st.spinner("Thinking..."):
         try:
             response = client.chat.completions.create(
-                messages=[{"role": m['role'], "content": m['content']} 
-                         for m in st.session_state.conversation] + [
-                    {
-                        "role": "system",
-                        "content": """You are a helpful travel assistant. Provide concise, 
-                        informative answers about travel destinations, flights, hotels, 
-                        packing tips, and general travel advice."""
-                    }
-                ],
-                model="llama3-8b-8192",
-                temperature=0.7
+                messages=[{"role": "user", "content": message}],
+                model="llama3-8b-8192"
             )
-            
             assistant_response = response.choices[0].message.content
             
-            # Add assistant response to conversation
+            # Store in Neo4j
+            store_conversation(
+                st.session_state.user_id,
+                message,
+                assistant_response
+            )
+            
+            # Add to conversation
             st.session_state.conversation.append({
                 'role': 'assistant',
                 'content': assistant_response,
                 'timestamp': datetime.now().isoformat()
             })
             
-            # Set the response to be spoken
-            st.session_state.last_response = assistant_response
-            st.session_state.speak_response = True
-            
             st.experimental_rerun()
             
         except Exception as e:
-            st.error(f"Error generating response: {str(e)}")
+            st.error(f"Error: {str(e)}")

@@ -34,3 +34,5 @@ class HotelAgent:
             self.entity, booking_id=booking_id
         )
         return True
+    
+    
