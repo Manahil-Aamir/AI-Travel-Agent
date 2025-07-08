@@ -41,3 +41,4 @@ pycountry
 markdown-it-py==3.0.0
 mdurl
 pygments
+html2text
