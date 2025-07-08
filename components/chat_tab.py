@@ -16,6 +16,7 @@ def speak(text):
         engine.say(text)
         engine.runAndWait()
         del engine
+        st.info(f"🔊 Assistant says: {text}")
     except Exception:
         print(Exception)
         print("Error initializing text-to-speech engine. Using Streamlit's info message instead.")
