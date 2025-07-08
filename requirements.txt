@@ -10,6 +10,7 @@ openai
 SpeechRecognition
 gTTS
 pyttsx3
+pyttsx4
 streamlit-mic-recorder
 pyaudio
 sounddevice
