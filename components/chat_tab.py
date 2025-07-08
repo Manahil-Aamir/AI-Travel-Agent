@@ -5,24 +5,30 @@ from groq import Groq
 from config import GROQ_API_KEY, NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD
 
 import speech_recognition as sr
-import pyttsx4
+from gtts import gTTS
+import base64
+from tempfile import NamedTemporaryFile
 import time
 
-# ========== Voice Engine Setup ==========
+# ========== Voice Engine (gTTS + HTML) ==========
 def speak(text):
-    """Speak text with fresh engine instance"""
     try:
-        engine = pyttsx4.init()
-        engine.say(text)
-        engine.runAndWait()
-        del engine
+        tts = gTTS(text)
+        with NamedTemporaryFile(delete=True, suffix=".mp3") as f:
+            tts.save(f.name)
+            audio = open(f.name, "rb").read()
+            b64 = base64.b64encode(audio).decode()
+            st.markdown(f'''
+            <audio controls autoplay>
+                <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
+            </audio>
+            ''', unsafe_allow_html=True)
         st.info(f"🔊 Assistant says: {text}")
-    except Exception:
-        print(Exception)
-        print("Error initializing text-to-speech engine. Using Streamlit's info message instead.")
-        
+    except Exception as e:
+        st.warning(f"⚠️ Speech failed: {e}")
         st.info(f"🔊 Assistant says: {text}")
 
+# ========== Voice Input ==========
 def listen_once():
     recognizer = sr.Recognizer()
     recognizer.energy_threshold = 4000
@@ -69,7 +75,6 @@ def store_conversation(user_id, message, response):
 def process_message(message):
     client = Groq(api_key=GROQ_API_KEY)
 
-    # Add user message
     st.session_state.conversation.append({
         'role': 'user',
         'content': message,
@@ -95,9 +100,7 @@ def process_message(message):
             'timestamp': datetime.now().isoformat()
         })
 
-        # ✅ Speak only if voice mode is active
         if st.session_state.get("voice_mode_active", False):
-            print(f"voice mode active, speaking response: {assistant_response}")
             speak(assistant_response)
 
         return assistant_response
@@ -143,7 +146,7 @@ def voice_listening_cycle():
         time.sleep(2)
         st.experimental_rerun()
 
-# ========== Main Chat ==========
+# ========== Main Chat Tab ==========
 def chat_tab():
     st.header("💬 Travel Chat Assistant")
 
@@ -174,7 +177,7 @@ def chat_tab():
     if st.session_state.voice_mode_active:
         st.markdown("### 📞 **Phone Call Mode Active**")
         st.markdown("- 🎤 **Microphone Status**: Ready")
-        st.markdown("- 🔊 **Speech Output**: Enabled") 
+        st.markdown("- 🔊 **Speech Output**: Enabled")
         st.markdown("- 📱 **Mode**: Continuous listening")
         st.markdown("- ⚠️ **Important**: Make sure your microphone is working and permitted")
 
