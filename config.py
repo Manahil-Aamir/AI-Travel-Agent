@@ -1,31 +1,50 @@
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load .env only if needed
 load_dotenv()
 
-# API Keys
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
-RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")
-LOCATIONIQ_API_KEY = os.getenv("LOCATIONIQ_API_KEY")
-SPOONACULAR_KEY = os.getenv("SPOONACULAR_API_KEY")
-FETCH_AI_API_KEY = os.getenv("FETCH_AI_API_KEY")
+# Try to import Streamlit and check if secrets are available
+try:
+    import streamlit as st
+    _secrets_available = hasattr(st, "secrets") and len(st.secrets) > 0
+except ImportError:
+    st = None
+    _secrets_available = False
+
+def get_secret(key, default=None):
+    if _secrets_available and key in st.secrets:
+        return st.secrets[key]
+    return os.getenv(key, default)
+
+# =======================
+# API Keys & Configs
+# =======================
+
+GROQ_API_KEY = get_secret("GROQ_API_KEY")
+TAVILY_API_KEY = get_secret("TAVILY_API_KEY")
+RAPIDAPI_KEY = get_secret("RAPIDAPI_KEY")
+LOCATIONIQ_API_KEY = get_secret("LOCATIONIQ_API_KEY")
+SPOONACULAR_KEY = get_secret("SPOONACULAR_API_KEY")
+FETCH_AI_API_KEY = get_secret("FETCH_AI_API_KEY")
 
 # Neo4j Configuration
-NEO4J_URI = os.getenv("NEO4J_URI")
-NEO4J_USERNAME = os.getenv("NEO4J_USERNAME")
-NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
+NEO4J_URI = get_secret("NEO4J_URI")
+NEO4J_USERNAME = get_secret("NEO4J_USERNAME")
+NEO4J_PASSWORD = get_secret("NEO4J_PASSWORD")
 
-# Fetch.ai Agents Configuration
+# Fetch Agents
 FETCH_AGENTS = {
-    "flight": os.getenv("FETCH_FLIGHT_AGENT_ID"),
-    "hotel": os.getenv("FETCH_HOTEL_AGENT_ID"),
-    "shopping": os.getenv("FETCH_SHOPPING_AGENT_ID"),
-    "chat": os.getenv("FETCH_CHAT_AGENT_ID")
+    "flight": get_secret("FETCH_FLIGHT_AGENT_ID"),
+    "hotel": get_secret("FETCH_HOTEL_AGENT_ID"),
+    "shopping": get_secret("FETCH_SHOPPING_AGENT_ID"),
+    "chat": get_secret("FETCH_CHAT_AGENT_ID")
 }
 
-# UI Constants
+# =======================
+# UI Constants & Defaults
+# =======================
+
 THEME = {
     "primary": "#6C63FF",
     "secondary": "#FF6584",
@@ -36,6 +55,5 @@ THEME = {
     "card_border": "rgba(108, 99, 255, 0.2)"
 }
 
-# App Settings
 DEFAULT_LOCATION = "San Francisco"
 DEFAULT_CURRENCY = "USD"
