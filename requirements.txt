@@ -8,8 +8,11 @@ openai
 
 # Voice Processing
 SpeechRecognition
+gTTS
 pyttsx3
 streamlit-mic-recorder
+pyaudio
+sounddevice
 
 # HTTP Requests
 requests
@@ -24,16 +27,17 @@ neo4j-driver
 # Visualization
 plotly
 
-# Environment
+# Environment Variables
 python-dotenv
 
-# Audio Processing
-pyaudio
-sounddevice
-
-# Date/Time
+# Date/Time Utilities
 python-dateutil
 
-# Additional Utilities
+# Parsing & Utilities
 json5
 typing-extensions
+pycountry
+markdown-it-py==3.0.0
+mdurl
+pygments
+rich==14.0.0
