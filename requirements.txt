@@ -1,7 +1,7 @@
 # Core Framework
 streamlit==1.29.0
 uagents==0.22.5
-
+rich<14,>=10.14.0
 # AI & NLP
 groq
 openai
