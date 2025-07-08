@@ -72,7 +72,7 @@ def get_kiwi_location_format(place_name):
             if iso_lookup.status_code == 200:
                 iso_data = iso_lookup.json()
                 country_code = iso_data[0]["cca2"].lower()
-        
+
         country_code = country_code.upper() if country_code else "XX"
 
         city = (
@@ -136,11 +136,10 @@ def search_flights(origin_input, dest_input):
     try:
         res = requests.get(url, headers=headers, params=params)
         st.write(f"📡 Kiwi API Response [{res.status_code}]: {res.text[:500]}...")
-        
+
         if res.status_code == 200:
             data = res.json()
-            st.write(data)
-            return data.get("data", []), data.get("metadata", {})
+            return data.get("itineraries", []), data.get("metadata", {})
         else:
             st.error(f"Kiwi API error: {res.status_code}")
     except Exception as e:
@@ -148,29 +147,43 @@ def search_flights(origin_input, dest_input):
     return [], {}
 
 # --- Display Flights ---
-def display_flights(flights, origin, dest, metadata=None):
-    if not flights:
+def display_flights(itineraries, origin, dest, metadata=None):
+    if not itineraries:
         st.warning("No flights found.")
         return
 
-    carrier_lookup = {c["code"]: c["name"] for c in metadata.get("carriers", [])} if metadata else {}
-    st.subheader(f"🛫 {len(flights)} flights from {origin} → {dest}")
-    for f in flights:
+    st.subheader(f"🛫 {len(itineraries)} Itineraries from {origin} → {dest}")
+
+    for i, itinerary in enumerate(itineraries, 1):
         try:
-            leg = f["legs"][0]
-            dep = leg["departure"]["when"]
-            arr = leg["arrival"]["when"]
-            carrier_code = leg["carriers"][0].get("code", "??")
-            airline = carrier_lookup.get(carrier_code, f"Carrier {carrier_code}")
-            price = f.get("price", {}).get("amount", "N/A")
+            price = itinerary.get("price", {}).get("amount", "N/A")
+            outbound = itinerary.get("outbound", {}).get("sectorSegments", [])[0].get("segment", {})
+            inbound = itinerary.get("inbound", {}).get("sectorSegments", [])[0].get("segment", {})
+
+            dep_time = outbound.get("source", {}).get("localTime", "N/A")
+            arr_time = outbound.get("destination", {}).get("localTime", "N/A")
+            ret_time = inbound.get("source", {}).get("localTime", "N/A")
+            ret_arr_time = inbound.get("destination", {}).get("localTime", "N/A")
+
+            airline = outbound.get("carrier", {}).get("name", "Unknown Airline")
+
             st.markdown(f"""
-            **🛫 {airline}**  
-            📅 **Departure:** {dep}  
-            📍 **Arrival:** {arr}  
+            ### ✈️ Option {i}
+            **Airline:** {airline}  
+            🟢 **Depart:** {dep_time} → {arr_time}  
+            🔁 **Return:** {ret_time} → {ret_arr_time}  
             💵 **Price:** {price} USD  
-            ---""")
+            ---
+            """)
+
+            for edge in itinerary.get("bookingOptions", {}).get("edges", []):
+                node = edge.get("node", {})
+                url = node.get("bookingUrl", "")
+                full_url = f"https://www.kiwi.com{url}" if url else "N/A"
+            st.markdown(f"[🔗 Book this flight]({full_url})")
+
         except Exception as e:
-            st.warning(f"Error displaying flight: {e}")
+            st.warning(f"Could not render itinerary: {e}")
 
 # --- Main Streamlit Tab ---
 def flight_tab():
