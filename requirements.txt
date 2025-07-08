@@ -1,7 +1,7 @@
 # Core Framework
 streamlit==1.29.0
 uagents==0.22.5
-rich<14,>=10.14.0
+rich==13.7.1
 # AI & NLP
 groq
 openai
@@ -41,4 +41,3 @@ pycountry
 markdown-it-py==3.0.0
 mdurl
 pygments
-rich==14.0.0
