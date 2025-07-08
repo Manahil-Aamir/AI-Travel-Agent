@@ -47,7 +47,7 @@ def main():
     if selected_tab == "dashboard":
         dashboard_tab()
     elif selected_tab == "flights":
-        flight_tab(voice_input)
+        flight_tab()
     elif selected_tab == "hotels":
         hotel_tab()
     elif selected_tab == "shopping":
@@ -55,9 +55,9 @@ def main():
     elif selected_tab == "recommendations":
         recommendations_tab()  # Pass voice_input if recommendations_tab expects it, or remove parentheses if it's a module
     elif selected_tab == "restaurants":
-        restaurant_tab(voice_input)
+        restaurant_tab()
     elif selected_tab == "chat":
-        chat_tab(voice_input)
+        chat_tab()
     
     # Handle voice response
     if "last_response" in st.session_state and "speak_response" in st.session_state:
